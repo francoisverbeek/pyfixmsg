@@ -12,21 +12,52 @@ from pyfixmsg.codecs.stringfix import Codec
 TAGS_AS_DATE = (432, 7509, 52)
 GTD_EXPIRE_DATE_TAG = 432
 TAGS_AS_DECIMAL = (31, 32, 151, 14, 6)
+#
+# class cFixFrament:
+#     store_type = cpyfixmsg.msg
 
-
-class FixFragment(dict):
+class FixFragment:
     """
     Type designed to hold a collection of fix tags and values.
     This type is used directly for the contents of repeating groups.
     Whole fix messages are parsed from their wire representation to
     instances of the :py:class:`~pyfixmsg.FixMessage` type which inherits from this type.
     """
-
+    store_type = dict
     def __init__(self, *args, **kwargs):
         """FixFragment constructor."""
-        super(FixFragment, self).__init__(*args, **kwargs)
+        self._store = self.store_type(*args, **kwargs)
         self.typed_values = True
 
+    def update(self, *args, **kwargs):
+        return self._store.update(*args, **kwargs)
+
+    def __setitem__(self, key, value):
+        self._store[key] = value
+
+    def __getitem__(self, key):
+        return self._store[key]
+
+    def keys(self):
+        return self._store.keys()
+    def values(self):
+        return self._store.values()
+    def items(self):
+        return self._store.items()
+    def get(self, key, default=None):
+        return self._store.get(key, default)
+    def __delitem__(self, key):
+        del self._store[key]
+    def __contains__(self, key):
+        return key in self._store
+    def __eq__(self, other):
+        try:
+            return self._store == other._store
+        except AttributeError:
+            return False
+    def __repr__(self):
+        return repr(self._store)
+        
     @classmethod
     def from_dict(cls, tags_dict):
         """
@@ -67,7 +98,7 @@ class FixFragment(dict):
         :return: a generator of paths where each path is a list of string or integer indices into the message
         :rtype: Generator of ``list`` of ``int`` or ``str``
         """
-        if tag in self:
+        if tag in self._store:
             yield [tag, ]
         for innertag, value in list(self.items()):
             if isinstance(value, pyfixmsg.RepeatingGroup):

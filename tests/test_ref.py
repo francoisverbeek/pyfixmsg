@@ -22,7 +22,6 @@ SPEC = None
 if sys.version_info.major >= 3:
   unicode = str
 
-
 @pytest.fixture
 def spec(request):
     global SPEC
@@ -216,22 +215,22 @@ class TestReference(object):
         msg = b'35=B;215=1;216=1;' \
               b'146=2;55=EURUSD;55=EURGBP;10=000;'
         msg = codec.parse(msg, separator=';')
-        assert {35: 'B', 
-                215: [{216 : '1'}], 
+        assert {35: 'B',
+                215: [{216 : '1'}],
                 146: [{55 : 'EURUSD'}, {55 : 'EURGBP'}],
                 10: '000'
                 } == msg
         lhs = tuple(codec._unmap(msg))
         assert lhs == ((35, 'B'),
+                       (215, 1),
+                       (216, '1'),
                        (146, 2),
                        (55, 'EURUSD'),
                        (55, 'EURGBP'),
-                       (215, 1),
-                       (216, '1'),
                        (10, '000')
                        )
-        serialised = '35=B;146=2;55=EURUSD;55=EURGBP;' \
-                     '215=1;216=1;10=000;'.replace(';', chr(1)).encode('UTF-8')
+        serialised = '35=B;' \
+                     '215=1;216=1;146=2;55=EURUSD;55=EURGBP;10=000;'.replace(';', chr(1)).encode('UTF-8')
         assert serialised == codec.serialise(msg)
 
     def test_nested_rgroup(self, spec):
