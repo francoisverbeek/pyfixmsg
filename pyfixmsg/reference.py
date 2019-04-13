@@ -186,7 +186,7 @@ def _extract_composition(element, spec):
     Parse XML spec to extract the composition of a nested structure (Component, Group or MsgType)
     """
     returned = []
-    for elem in element.getchildren():
+    for elem in list(element):
         if elem.tag == "field":
             returned.append((spec.tags.by_name(elem.get('name')),
                              elem.get('required') == "Y"))

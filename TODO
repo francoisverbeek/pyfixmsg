@@ -1,0 +1,3 @@
+* Support configurable separators
+* Support serialisation
+* clean up signature of proxy

@@ -1,10 +1,10 @@
 '''
 Main FixMessage class and supporting tools
 '''
-import re
-import decimal
-import warnings
 import datetime
+import decimal
+import re
+import warnings
 
 import pyfixmsg
 from pyfixmsg.codecs.stringfix import Codec
@@ -12,9 +12,6 @@ from pyfixmsg.codecs.stringfix import Codec
 TAGS_AS_DATE = (432, 7509, 52)
 GTD_EXPIRE_DATE_TAG = 432
 TAGS_AS_DECIMAL = (31, 32, 151, 14, 6)
-#
-# class cFixFrament:
-#     store_type = cpyfixmsg.msg
 
 class FixFragment:
     """
@@ -57,7 +54,7 @@ class FixFragment:
             return False
     def __repr__(self):
         return repr(self._store)
-        
+
     @classmethod
     def from_dict(cls, tags_dict):
         """
@@ -144,7 +141,6 @@ class FixFragment:
         :rtype: ``list``
         """
         return list(set(tag for tag in self._all_tags()))
-
 
 class FixMessage(FixFragment):  # pylint: disable=R0904
     # too many public methods. Needed for compatibility and functionality
@@ -390,7 +386,7 @@ class FixMessage(FixFragment):  # pylint: disable=R0904
         Extract from a wire representation according to a codec
         """
         codec = codec or self.codec
-        self.update(codec.parse(msg))
+        self._store = codec.parse(msg)
         self.typed_values = not getattr(codec, 'decoded_values_are_untyped', False)
 
     def get_raw_message(self):

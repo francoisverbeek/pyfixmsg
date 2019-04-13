@@ -1,19 +1,20 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import pickle
-from timeit import timeit
 import datetime
-import time
-import sys
 import os
+import pickle
+import sys
+import time
+from timeit import timeit
 
 import pytest
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 from pyfixmsg.reference import FixSpec
-from pyfixmsg.codecs.stringfix import Codec
+from pyfixmsg.codecs.faststringfix import Codec as FastCodec
+from pyfixmsg.codecs.stringfix import Codec as FullCodec
 from pyfixmsg.fixmessage import FixMessage, FixFragment
 from pyfixmsg import RepeatingGroup, len_and_chsum
 
@@ -70,50 +71,55 @@ class TestReference(object):
         assert 382 in spec.msg_types.get(b'8').groups
 
     def test_codec(self, spec):
-        codec = Codec(spec=spec, decode_as='UTF-8')
-        msg = (b'8=FIX.4.2;35=D;49=BLA;56=BLA;57=DEST;143=LN;11=eleven;18=1;21=2;54=2;40=2;59=0;55=PROD;'
-               b'38=10;44=1;52=20110215-02:20:52.675;10=000;')
-        res = codec.parse(msg, separator=';')
-        assert {8: 'FIX.4.2',
-                11: 'eleven',
-                18: '1',
-                21: '2',
-                35: 'D',
-                38: '10',
-                40: '2',
-                44: '1',
-                49: 'BLA',
-                52: '20110215-02:20:52.675',
-                54: '2',
-                55: 'PROD',
-                56: 'BLA',
-                57: 'DEST',
-                59: '0',
-                10: '000',
-                143: 'LN'} == res
-        codec = Codec(spec=spec)
-        msg = (b'8=FIX.4.2;35=D;49=BLA;56=BLA;57=DEST;143=LN;11=eleven;18=1;21=2;54=2;40=2;59=0;55=PROD;'
-               b'38=10;44=1;52=20110215-02:20:52.675;10=000;')
-        res = codec.parse(msg, separator=';')
-        assert {8: b'FIX.4.2',
-                11: b'eleven',
-                18: b'1',
-                21: b'2',
-                35: b'D',
-                38: b'10',
-                40: b'2',
-                44: b'1',
-                49: b'BLA',
-                52: b'20110215-02:20:52.675',
-                54: b'2',
-                55: b'PROD',
-                56: b'BLA',
-                57: b'DEST',
-                59: b'0',
-                10: b'000',
-                143: b'LN'} == res
+        for codec in (FullCodec(spec=spec), FastCodec(spec=spec)):
+            msg = (b'8=FIX.4.2;35=D;49=BLA;56=BLA;57=DEST;143=LN;11=eleven;18=1;21=2;54=2;40=2;59=0;55=PROD;'
+                   b'38=10;44=1;52=20110215-02:20:52.675;10=000;')
+            res = codec.parse(msg, separator=';')
+            assert {8: b'FIX.4.2',
+                    11: b'eleven',
+                    18: b'1',
+                    21: b'2',
+                    35: b'D',
+                    38: b'10',
+                    40: b'2',
+                    44: b'1',
+                    49: b'BLA',
+                    52: b'20110215-02:20:52.675',
+                    54: b'2',
+                    55: b'PROD',
+                    56: b'BLA',
+                    57: b'DEST',
+                    59: b'0',
+                    10: b'000',
+                    143: b'LN'} == dict(res.items())
 
-        codec = Codec(spec=spec, decode_all_as_347=True)
+    def test_codec2(self, spec):
+        for codec in (FullCodec(spec=spec), FastCodec(spec=spec)):
+            msg = (b'8=FIX.4.2;35=D;49=BLA;56=BLA;57=DEST;143=LN;11=eleven;18=1;21=2;54=2;40=2;59=0;55=PROD;'
+                   b'38=10;44=1;52=20110215-02:20:52.675;10=000;')
+            res = codec.parse(msg, separator=';')
+            assert {8: b'FIX.4.2',
+                    11: b'eleven',
+                    18: b'1',
+                    21: b'2',
+                    35: b'D',
+                    38: b'10',
+                    40: b'2',
+                    44: b'1',
+                    49: b'BLA',
+                    52: b'20110215-02:20:52.675',
+                    54: b'2',
+                    55: b'PROD',
+                    56: b'BLA',
+                    57: b'DEST',
+                    59: b'0',
+                    10: b'000',
+                    143: b'LN'} == dict(res.items())
+
+    def test_codec3(self, spec):
+        codec = FullCodec(spec=spec, decode_all_as_347=True)
+        msg = (b'8=FIX.4.2;35=D;49=BLA;56=BLA;57=DEST;143=LN;11=eleven;18=1;21=2;54=2;40=2;59=0;55=PROD;'
+               b'38=10;44=1;52=20110215-02:20:52.675;10=000;')
         res = codec.parse(msg, separator=';')
         assert {8: b'FIX.4.2',
                 11: b'eleven',
@@ -131,10 +137,12 @@ class TestReference(object):
                 57: b'DEST',
                 59: b'0',
                 10: b'000',
-                143: b'LN'} == res
+                143: b'LN'} == dict(res.items())
+
+    def test_codec4(self, spec):
         msg = (b'8=FIX.4.2;35=D;49=BLA;56=BLA;57=DEST;347=UTF-8;143=LN;11=eleven;18=1;21=2;54=2;40=2;59=0;55=PROD;'
                b'38=10;44=1;52=20110215-02:20:52.675;10=000;')
-        codec = Codec(spec=spec, decode_all_as_347=True)
+        codec = FullCodec(spec=spec, decode_all_as_347=True)
         res = codec.parse(msg, separator=';')
         assert {8: 'FIX.4.2',
                 11: 'eleven',
@@ -154,13 +162,15 @@ class TestReference(object):
                 10: '000',
                 143: 'LN',
                 347: 'UTF-8'} == res
+
+    def test_codec4(self, spec):
         msg = (b'8=FIX.4.2;35=8;49=BLA;56=BLA;57=DEST;143=LN;11=eleven;18=1;21=2;54=2;40=2;59=0;55=PROD;'
                b'38=10;44=1;52=20110215-02:20:52.675;'
                b'382=2;'
                b'375=A;337=B;'
                b'375=B;437=B;'
                b'10=000;')
-        codec = Codec(spec=spec)
+        codec = FullCodec(spec=spec)
         res = codec.parse(msg, separator=';')
         assert {8: b'FIX.4.2',
                 11: b'eleven',
@@ -181,7 +191,10 @@ class TestReference(object):
                 59: b'0',
                 143: b'LN',
                 10: b'000'} == res
+
+    def test_codec5(self, spec):
         # make sure that with a group finishing the message it still works
+        codec = FullCodec(spec=spec)
         msg = (b'8=FIX.4.2;35=8;49=BLA;56=BLA;57=DEST;143=LN;11=eleven;18=1;21=2;54=2;40=2;59=0;55=PROD;'
                b'38=10;44=1;52=20110215-02:20:52.675;'
                b'382=2;'
@@ -211,7 +224,7 @@ class TestReference(object):
                 } == res
 
     def test_consecutive_rgroups(self, spec):
-        codec = Codec(spec=spec, decode_as='UTF-8')
+        codec = FullCodec(spec=spec, decode_as='UTF-8')
         msg = b'35=B;215=1;216=1;' \
               b'146=2;55=EURUSD;55=EURGBP;10=000;'
         msg = codec.parse(msg, separator=';')
@@ -234,7 +247,7 @@ class TestReference(object):
         assert serialised == codec.serialise(msg)
 
     def test_nested_rgroup(self, spec):
-        codec = Codec(spec=spec, decode_as='UTF-8')
+        codec = FullCodec(spec=spec, decode_as='UTF-8')
         msg = b'35=AE;555=1;687=AA;683=2;688=1;689=1;' \
               b'688=2;689=2;17807=11;10=000;'
         msg = codec.parse(msg, separator=';')
@@ -270,7 +283,7 @@ class TestReference(object):
         assert serialised == codec.serialise(msg)
 
     def test_empty_rgroups(self, spec):
-        codec = Codec(spec=spec, decode_as='UTF-8')
+        codec = FullCodec(spec=spec, decode_as='UTF-8')
         msg = b'35=AJ;17807=11;232=2;233=bli;234=blu;' \
               b'233=blih;234=bluh;555=0;10=000;'
         msg = codec.parse(msg, separator=';')
@@ -301,7 +314,8 @@ class TestReference(object):
     def test_large_msg(self, spec, profiler):
         setup = """
 import pyfixmsg.reference as ref
-from pyfixmsg.codecs.stringfix import Codec
+from pyfixmsg.codecs.stringfix import Codec as FullCodec
+from pyfixmsg.codecs.faststringfix import Codec as FastCodec
 strfix = (
   b"8=FIX.4.2;9=1848;35=W;49=BBBBBBBB;56=XXXXXXX;34=2;52=20160418-15:44:37.238;115=YYYYYYYY;"
   b"142=NY;55=EURUSD;262=7357fbfc-057c-11e6-87de-ecf4bbc826fc;264=0;"
@@ -328,43 +342,62 @@ strfix = (
   b"269=1;278=a10;270=1.1317;271=88370449;299=d1s30g1a10;1023=10;63=0;64=20160420;1070=0;"
   b"1187=Y;10577=0.0001;11519=0.00001;11520=0.000001;11523=0.0001;10=065;"
 )
-spec = ref.FixSpec('{spec.source}')
-codec = Codec(spec=spec)""".format(spec=spec)
+spec = ref.FixSpec('%s')
+fullcodec = FullCodec(spec=spec)
+fastcodec = FastCodec(spec=spec)""" % spec.source
 
         setup_small = """\nstrfix = b'8=FIX.4.2;35=8;555=1;683=2;688=1;689=1;688=2;689=2;687=AA;17807=11;10=000;'"""
         setup_norgroup = """\nstrfix = b'8=FIX.4.2;35=D;49=BLA;56=BLA;57=DEST;143=LN;11=eleven;18=1;21=2;54=2;40=2;59=0;55=PROD;38=10;44=1;52=20110215-02:20:52.675;10=000;'"""
-        setup_norgroup_simple_spec = setup + "\ncodec = Codec()" + setup_norgroup
-
+        setup_norgroup_simple_spec = setup + \
+                                     f"\nfastcodec = FastCodec()" + setup_norgroup + \
+                                     f"\nfullcodec = FullCodec()" + setup_norgroup
         num_runs = 100
         with profiler:
-            print('parsing large message',
-                  num_runs / timeit('codec.parse(strfix, separator=";")',
+            print(f'full parsing large message',
+                  num_runs / timeit('fullcodec.parse(strfix, separator=";")',
                                     setup=setup,
                                     number=num_runs))
-            print('parsing small_message',
-                  num_runs / timeit('codec.parse(strfix, separator=";")',
+            print(f'fast parsing large message',
+                  num_runs / timeit('fastcodec.parse(strfix, separator=";")',
+                                    setup=setup,
+                                    number=num_runs))
+            print(f'full parsing small_message',
+                  num_runs / timeit('fullcodec.parse(strfix, separator=";")',
                                     setup=setup + setup_small,
                                     number=num_runs))
-            print('parsing small_message with simple spec',
-                  num_runs / timeit('codec.parse(strfix, separator=";")',
+            print(f'fast parsing small_message',
+                  num_runs / timeit('fastcodec.parse(strfix, separator=";")',
+                                    setup=setup + setup_small,
+                                    number=num_runs))
+            print(f'full parsing small_message with simple spec',
+                  num_runs / timeit('fullcodec.parse(strfix, separator=";")',
                                     setup=setup_norgroup_simple_spec,
                                     number=num_runs))
-            print('parsing small message with no rgroups', num_runs / timeit('codec.parse(strfix, separator=";")',
+            print(f'fast parsing small_message with simple spec',
+                  num_runs / timeit('fastcodec.parse(strfix, separator=";")',
+                                    setup=setup_norgroup_simple_spec,
+                                    number=num_runs))
+            print(f'full parsing small message with no rgroups',
+                  num_runs / timeit('fullcodec.parse(strfix, separator=";")',
                                                                              setup=setup + setup_norgroup,
                                                                              number=num_runs))
-            print('serialisation large message', num_runs / timeit('codec.serialise(msg)',
-                                                                   setup=setup + "\nmsg = codec.parse(strfix, separator=';')",
+            print(f'fast parsing small message with no rgroups',
+                  num_runs / timeit('fastcodec.parse(strfix, separator=";")',
+                                    setup=setup + setup_norgroup,
+                                    number=num_runs))
+            print(f'full serialisation large message', num_runs / timeit('fullcodec.serialise(msg)',
+                                                                         setup=setup + "\nmsg = fullcodec.parse(strfix, separator=';')",
                                                                    number=num_runs))
-            print('serialisation small message', num_runs / timeit('codec.serialise(msg)',
-                                                                   setup=setup + setup_small + "\nmsg = codec.parse(strfix, separator=';')",
-                                                                   number=num_runs))
-            print('serialisation small message with no rgroups', num_runs / timeit('codec.serialise(msg)',
-                                                                                   setup=setup + setup_norgroup + "\nmsg = codec.parse(strfix, separator=';')",
-                                                                                   number=num_runs))
+            print(f'full serialisation small message', num_runs / timeit('fullcodec.serialise(msg)',
+                                                                         setup=setup + setup_small + "\nmsg = fullcodec.parse(strfix, separator=';')",
+                                                                         number=num_runs))
+            print(f'full serialisation small message with no rgroups', num_runs / timeit('fullcodec.serialise(msg)',
+                                                                                         setup=setup + setup_norgroup + "\nmsg = fullcodec.parse(strfix, separator=';')",
+                                                                                         number=num_runs))
 
-            print('serialisation small message with no spec', num_runs / timeit('codec.serialise(msg)',
-                                                                                setup=setup_norgroup_simple_spec + "\nmsg = codec.parse(strfix, separator=';')",
-                                                                                number=num_runs))
+            print(f'full serialisation small message with no spec', num_runs / timeit('fullcodec.serialise(msg)',
+                                                                                      setup=setup_norgroup_simple_spec + "\nmsg = fullcodec.parse(strfix, separator=';')",
+                                                                                      number=num_runs))
 
 
 class TestOperators(object):
@@ -587,7 +620,20 @@ class TestOperators(object):
         Tests creating a fix message via the "from_buffer" static function
         """
         buff = b"9=10\x0135=D\x0134=3\x0110=154\x01"
-        msg = FixMessage.from_buffer(buff, Codec())
+        msg = FixMessage.from_buffer(buff, FullCodec())
+        assert {9, 35, 34, 10} == set(msg.keys())
+        assert b'10' == msg[9]
+        assert b'D' == msg[35]
+        assert b'3' == msg[34]
+        assert b'154' == msg[10]
+        assert msg.get_raw_message() == buff
+
+    def test_from_buffer_fast(self):
+        """
+        Tests creating a fix message via the "from_buffer" static function
+        """
+        buff = b"9=10;35=D;34=3;10=154;"
+        msg = FixMessage.from_buffer(buff, FastCodec())
         assert {9, 35, 34, 10} == set(msg.keys())
         assert b'10' == msg[9]
         assert b'D' == msg[35]
@@ -636,12 +682,12 @@ class TestOperators(object):
                 b'|15=EUR|271=2500000|346=1|279=0|269=1|278=OFFER|55=EUR/USD'
                 b'|270=1.37224|15=EUR|271=2503200|346=1|10=171|')
         before = FixMessage()
-        before.codec = Codec(spec=spec)
+        before.codec = FullCodec(spec=spec)
         before.load_fix(data, separator='|')
         composition = [(spec.tags.by_tag(i), False) for i in (279, 269, 278, 55, 270, 15, 271, 346)]
         spec.msg_types[b'D'].add_group(spec.tags.by_tag(268), composition)
         after = FixMessage()
-        after.codec = Codec(spec=spec, fragment_class=FixFragment)
+        after.codec = FullCodec(spec=spec, fragment_class=FixFragment)
         after.load_fix(data, separator='|')
         assert isinstance(before[268], (str, unicode, bytes))  # 268 is not parsed as a repeating group
         assert before[270] == b'1.37224'  # 268 is not parsed as a repeating group, so 270 takes the second value
@@ -649,3 +695,16 @@ class TestOperators(object):
         with pytest.raises(KeyError):
             after[270]
         assert list(after.find_all(270)) == [[268, 0, 270], [268, 1, 270]]
+
+
+def test_libfix():
+    from libpyfix import FixMsg
+    data = (b'8=FIX.4.2|9=196|35=D|49=A|56=B|34=12|52=20100318-03:21:11.364'
+            b'|262=A|268=2|279=0|269=0|278=BID|55=EUR/USD|270=1.37215'
+            b'|15=EUR|271=2500000|346=1|279=0|269=1|278=OFFER|55=EUR/USD'
+            b'|270=1.37224|15=EUR|271=2503200|346=1|10=171|'.replace(b"|",
+                                                                     b";"))
+    a = FixMsg(data)
+    assert list(a) == [8, 9, 35, 49, 56, 34, 52, 262, 268, 279, 269, 278, 55,
+                       270, 15, 271, 346, 279, 269, 278, 55, 270, 15, 271, 346, 10]
+    assert a[35] == b'D'
