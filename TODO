@@ -1,3 +1,5 @@
-* Support configurable separators
-* Support serialisation
-* clean up signature of proxy
+* Support fast serialisation
+    * ordering
+* document list() semantics
+* fix dict() semantics
+

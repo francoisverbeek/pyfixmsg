@@ -12,7 +12,7 @@
 #include "fixmsgproxy.h"
 #include "msgTypesMap.h"
 #include "groupdef.h"
-#include "fixlib_linear.h"
+#include "parse.h"
 
 
 Py_ssize_t LproxyLen(PyObject *proxy) {
@@ -179,15 +179,18 @@ int create_linear(PyObject *obj, PyObject *args, PyObject *kwargs) {
     char *data;
     Py_ssize_t len;
     PyObject *PymsgTypes = NULL;
-    if (!PyArg_ParseTuple(args, "y#|O!", &data, &len, &MsgTypeMap_Type, &PymsgTypes)) {
+    char separator = 1;
+    char delimiter = '=';
+    if (!PyArg_ParseTuple(args, "y#|O!CC", &data, &len, &MsgTypeMap_Type, &PymsgTypes, &separator, &delimiter)) {
         return 0;
     }
+
     self->sourcestr = malloc(len);
     self->len = len;
     self->groups = NULL;
     memcpy(self->sourcestr, data, len);
 
-    self->tags = findtags_linear(self->sourcestr, len, ';', '=', &self->numtags);
+    self->tags = findtags_linear(self->sourcestr, len, separator, delimiter, &self->numtags);
     groupsForType_t *groups = NULL;
     msgTypes_t *msgTypes = (msgTypes_t *) PymsgTypes;
     if (msgTypes != NULL && self->tags->msgType != 0) {

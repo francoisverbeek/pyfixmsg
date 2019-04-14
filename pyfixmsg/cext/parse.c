@@ -1,16 +1,13 @@
 //
 //  pyfixlib
 //
-//  Created by Francois Verbeek on 02/02/2017.
-//  Copyright © 2017 Francois Verbeek. All rights reserved.
-//
 
 #include <Python.h>
 #include <assert.h>
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include "fixlib_linear.h"
+#include "parse.h"
 #include "util.h"
 
 tags_t *alloc_tags_linear(size_t numtags) {

@@ -5,6 +5,8 @@ import sys
 
 import libpyfix
 
+from pyfixmsg import reference
+
 SEPARATOR = '\1'
 """
 Standard separator for the StringFIX codec between tag value pairs.
@@ -23,8 +25,8 @@ if sys.version_info.major >= 3:
 
 
 class FixMsg:
-    def __init__(self, buff):
-        self._store = libpyfix.FixMsg(buff)
+    def __init__(self, buff, msg_types, separator, delimiter):
+        self._store = libpyfix.FixMsg(buff, msg_types, separator, delimiter)
 
     def items(self):
         return ((k, self._store[k]) for k in list(self._store))
@@ -53,11 +55,16 @@ class Codec(object):
 
     """
 
-    def __init__(self, spec=None, no_groups=False, fragment_class=dict, decode_as=None, decode_all_as_347=False):
-        return
+    def __init__(self, spec: reference.FixSpec = None, no_groups=False, fragment_class=dict, decode_as=None,
+                 decode_all_as_347=False):
+        self.msg_types = libpyfix.MsgTypes()
+        if spec is not None:
+            for msg_type in spec.msg_types.values():
+                for group in msg_type.groups.values():
+                    self.msg_types.addGroupMaps(msg_type.msgtype, group.count_tag.tag, [t for t in group.tags])
 
     def parse(self, buff, delimiter=DELIMITER, separator=SEPARATOR):
-        return FixMsg(buff)
+        return FixMsg(buff, self.msg_types, separator, delimiter)
 
     def serialise(self, msg, separator=SEPARATOR, delimiter=DELIMITER, encoding=None):
         return

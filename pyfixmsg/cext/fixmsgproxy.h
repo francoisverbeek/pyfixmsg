@@ -2,7 +2,7 @@
 #define __fixmessageproxy_linear_h
 
 #include <Python.h>
-#include "fixlib_linear.h"
+#include "parse.h"
 #include "msgTypesMap.h"
 
 typedef struct {

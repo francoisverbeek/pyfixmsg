@@ -2,8 +2,6 @@ import glob
 from distutils.core import setup, Extension
 
 sources = glob.glob("pyfixmsg/cext/*.c")
-print(sources)
-sources.remove("pyfixmsg/cext/main.c")
 module1 = Extension('libpyfix',
                     sources=sources
                     )
